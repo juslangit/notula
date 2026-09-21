@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>            <string>Notula</string>
+    <key>CFBundleDisplayName</key>     <string>Notula</string>
+    <key>CFBundleExecutable</key>      <string>Notula</string>
+    <key>CFBundleIdentifier</key>      <string>com.luqman.notula</string>
+    <key>CFBundlePackageType</key>     <string>APPL</string>
+    <key>CFBundleShortVersionString</key> <string>1.0</string>
+    <key>CFBundleVersion</key>         <string>1</string>
+    <key>LSMinimumSystemVersion</key>  <string>15.0</string>
+    <key>LSUIElement</key>             <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Notula records the meeting so it can write the minutes.</string>
+    <key>NSPipelinePlaceholder</key>   <string>filled in by build.sh</string>
+</dict>
+</plist>

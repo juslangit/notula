@@ -1,0 +1,6 @@
+.build/
+build/
+models/
+*.wav
+*.bin
+.DS_Store
