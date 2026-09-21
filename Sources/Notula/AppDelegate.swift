@@ -130,9 +130,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     // The script prints the folder it wrote to on its last line.
                     let last = log.split(separator: "\n").last.map(String.init) ?? ""
                     let folder = URL(fileURLWithPath: last.hasPrefix("/") ? last : target.path)
-                    let summary = folder.appendingPathComponent("summary.md")
-                    if FileManager.default.fileExists(atPath: summary.path) {
-                        NSWorkspace.shared.open(summary)
+                    // The page first — it is the readable one. The Markdown is still there.
+                    let page = folder.appendingPathComponent("summary.html")
+                    let markdown = folder.appendingPathComponent("summary.md")
+                    if FileManager.default.fileExists(atPath: page.path) {
+                        NSWorkspace.shared.open(page)
+                    } else if FileManager.default.fileExists(atPath: markdown.path) {
+                        NSWorkspace.shared.open(markdown)
                     } else {
                         NSWorkspace.shared.open(folder)
                     }

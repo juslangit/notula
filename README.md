@@ -18,13 +18,16 @@ Click **Stop and Summarise** and it transcribes both tracks, interleaves them by
 time so every line is labelled `Room:` or `Call:`, and asks Claude to write the
 notes. The summary opens by itself when it is ready.
 
-Everything lands in `~/Documents/Meetings/<date>-<time>/`:
+Everything lands in `~/Documents/Meetings/`, in a folder named after the meeting
+itself — `2026-09-21-1755-game-jam-format-and-pitching`. The title comes from the
+summary, so the Finder is readable a month later without opening anything.
 
 ```
-mic.wav  system.wav    the raw recording
-meeting.wav            both tracks mixed, for listening back
+summary.html           the notes as a page — this is the one that opens
+summary.md             the same notes as plain text, for pasting elsewhere
 transcript.txt         what was said, with timestamps and Room / Call labels
-summary.md             the notes
+meeting.wav            both tracks mixed, for listening back
+mic.wav  system.wav    the raw recording
 notula.log             what each step did, when something goes wrong
 ```
 
@@ -59,6 +62,8 @@ transcript: `transcript.txt` is complete on its own.
   prompt lives at the bottom of this file. Editing it changes the next summary
   straight away, with no rebuild.
 - `tools/merge_tracks.py` — interleaves the two transcripts by timestamp.
+- `tools/render_html.py` — turns `summary.md` into the page, and reports the title
+  the folder gets named after. All the styling lives in this one file.
 - `models/` — the Whisper model, 547 MB, not in git.
 
 Run the brain by itself on any recording, no app needed:
@@ -69,7 +74,8 @@ Run the brain by itself on any recording, no app needed:
 ```
 
 It skips any step already done, so if a summary comes out badly you can delete
-`summary.md`, edit the prompt and run it again without transcribing afresh.
+`summary.md`, edit the prompt and run it again without transcribing afresh — the
+page and the folder name are rebuilt from whatever the new summary says.
 
 ## Knobs
 
@@ -87,6 +93,8 @@ macOS 15 or newer, Apple silicon.
 ## Known limits
 
 - **No speaker names.** It knows room from call, not Ali from Fikri.
+- The folder is renamed only after the summary exists, so a run that fails partway
+  leaves the plain `<date>-<time>` name behind. Running it again finishes the job.
 - Roughly one minute of processing per ten minutes of meeting, on an M2.
 - Heavy Malay–English code-switching still trips Whisper. It gets the meaning;
   it mangles the occasional word. The summary prompt tells Claude to expect that.

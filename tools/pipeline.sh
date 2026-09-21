@@ -8,6 +8,7 @@
 #   2. whisper-cli  turns each track into text, on this Mac, offline
 #   3. merge        interleaves the two tracks by time, so lines are labelled Room / Call
 #   4. claude       reads the transcript and writes summary.md
+#   5. render       makes summary.html from it, and names the folder after the meeting
 set -eu
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
@@ -88,6 +89,9 @@ python3 "$HERE/merge_tracks.py" "$FOLDER" || { log "nothing was said in the reco
 log "transcript: $(wc -w < transcript.txt | tr -d ' ') words"
 
 # ----------------------------------------------------------- 3. the summary --
+if [[ -s summary.md ]]; then
+  log "summary.md is already there — leaving it alone (delete it to write a new one)"
+else
 log "asking Claude for the notes"
 PROMPT='You are reading the transcript of a real meeting, produced by automatic speech
 recognition. Read it with these things in mind:
@@ -101,7 +105,16 @@ recognition. Read it with these things in mind:
   line as though it were certain. Where you can tell what a mangled word was
   meant to be, use the right word.
 
-Write Markdown, using exactly these headings:
+Write Markdown. Begin with a title line and nothing before it:
+
+# <the meeting in three to six words>
+
+The title names the actual subject, the way a person would refer to this meeting
+a month later — "Tuition LMS landing page", "Budget for the print lab". Not
+"Meeting Summary", not a date, no quote marks. It becomes the name of the folder
+these notes live in.
+
+Then these headings, exactly:
 
 ## What this meeting was about
 Two or three sentences.
@@ -120,13 +133,44 @@ Things raised and left hanging.
 Anything else worth keeping: numbers, names, amounts, links, dates.
 
 Rules: invent nothing. If the transcript is too broken or too short to summarise,
-say so plainly in one line instead of filling the headings with guesses. No
-preamble — start at the first heading.'
+give it an honest title such as "Unclear recording" and say so plainly in one
+line instead of filling the headings with guesses. No preamble — start at the
+title line.'
 
 claude -p "$PROMPT" < transcript.txt > summary.md 2>>notula.log || {
   log "claude failed — see notula.log"; exit 1
 }
 [[ -s summary.md ]] || { log "the summary came out empty"; exit 1 }
-log "done — $FOLDER/summary.md"
+fi
+
+# ------------------------------------------------- 4. the page and the name --
+TITLE="$(python3 "$HERE/render_html.py" "$FOLDER" || true)"
+[[ -s summary.html ]] || log "warning: summary.html was not written"
+
+# The folder is named <date>-<time>-<what the meeting was about>, so the Finder
+# is readable a month later without opening anything.
+if [[ -n "$TITLE" ]]; then
+  SLUG="$(print -r -- "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//' | cut -c1-45 | sed 's/-$//')"
+  BASE="$(basename "$FOLDER")"
+  if [[ "$BASE" =~ '^([0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4})' ]]; then
+    STAMP="$match[1]"
+  else
+    STAMP="$BASE"
+  fi
+  if [[ -n "$SLUG" ]]; then
+    NEW="$(dirname "$FOLDER")/$STAMP-$SLUG"
+    N=2
+    while [[ -e "$NEW" && "$NEW" != "$FOLDER" ]]; do
+      NEW="$(dirname "$FOLDER")/$STAMP-$SLUG-$N"
+      (( N++ ))
+    done
+    if [[ "$NEW" != "$FOLDER" ]]; then
+      mv "$FOLDER" "$NEW" && FOLDER="$NEW" && cd "$FOLDER"
+      log "named it after the meeting: $(basename "$FOLDER")"
+    fi
+  fi
+fi
+
+log "done — $FOLDER/summary.html"
 
 print -r -- "$FOLDER"
