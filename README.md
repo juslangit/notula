@@ -46,6 +46,21 @@ The first recording asks for two permissions, once:
 
 If a permission was refused, it is in System Settings → Privacy & Security.
 
+**It should only ask once — ever.** macOS identifies an app by its code signature.
+An ad-hoc signature is the hash of the app's own bytes, so every rebuild looks
+like a brand-new app and the permissions are forgotten. `tools/make-signing-cert.sh`
+creates a local self-signed certificate (once, with a Touch ID prompt), and
+`build.sh` signs with it, which keeps the identity fixed:
+
+```
+designated => identifier "com.luqman.notula" and certificate leaf = H"71ec…"
+```
+
+No `cdhash` in there — that is the point. The certificate is self-signed, lives
+only in this login keychain, and is trusted by nothing except this Mac's own
+record of what Notula is. If you ever delete it from Keychain Access, the next
+build falls back to ad-hoc and the asking starts again.
+
 ## The privacy line
 
 The audio never leaves the Mac — Whisper transcribes it here. The **transcript

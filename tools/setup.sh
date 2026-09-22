@@ -19,4 +19,7 @@ mkdir -p models
   curl -L --fail -o models/ggml-silero-v5.1.2.bin \
     https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v5.1.2.bin
 }
+# Stops macOS asking for the microphone and screen permissions after every rebuild.
+./tools/make-signing-cert.sh
+
 echo "→ ready. Now run ./run.sh"
