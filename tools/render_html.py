@@ -200,7 +200,9 @@ def main() -> int:
         when = datetime.strptime(f"{stamp.group(1)} {stamp.group(2)}:{stamp.group(3)}", "%Y-%m-%d %H:%M")
         meta.append(f"<span>{when.strftime('%A, %-d %B %Y')}</span>")
         meta.append(f"<span>{when.strftime('%H:%M')}</span>")
-    length = duration_of(folder / "meeting.wav")
+    audio = next((folder / n for n in ("meeting.wav", "meeting.m4a", "mic.m4a")
+                  if (folder / n).exists()), None)
+    length = duration_of(audio) if audio else ""
     if length:
         meta.append(f"<span>{length}</span>")
 

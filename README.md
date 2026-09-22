@@ -26,10 +26,15 @@ summary, so the Finder is readable a month later without opening anything.
 summary.html           the notes as a page — this is the one that opens
 summary.md             the same notes as plain text, for pasting elsewhere
 transcript.txt         what was said, with timestamps and Room / Call labels
-meeting.wav            both tracks mixed, for listening back
-mic.wav  system.wav    the raw recording
+meeting.m4a            the meeting audio, to listen back to
+mic.m4a  system.m4a    each side on its own, when there were two
 notula.log             what each step did, when something goes wrong
 ```
+
+The recording is made as WAV and kept as AAC: an hour of raw 48 kHz audio is
+about 700 MB per track, and once the words are out of it nothing needs that. A
+53-minute meeting comes to roughly 26 MB. `NOTULA_KEEP_WAV=1` keeps the WAVs if
+you ever want them.
 
 ## Running it
 
@@ -99,6 +104,7 @@ page and the folder name are rebuilt from whatever the new summary says.
 | `NOTULA_LANG` | `auto` | Force a language: `NOTULA_LANG=en` or `ms`. Useful when a mixed-language meeting gets detected wrongly. |
 | `NOTULA_MODEL` | `models/ggml-large-v3-turbo-q5_0.bin` | A different Whisper model. Bigger is more accurate and slower. |
 | `NOTULA_QUIET_DB` | `-55` | Below this average volume a track counts as silent and is skipped — that's what stops a silent call track from inventing text. |
+| `NOTULA_KEEP_WAV` | unset | Set to `1` to keep the raw WAV files instead of compressing to AAC. |
 
 ## What it needs
 

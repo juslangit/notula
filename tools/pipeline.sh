@@ -40,16 +40,24 @@ command -v claude      >/dev/null || { log "the claude command is missing"; exit
 
 # ------------------------------------------------------------- 1. the audio --
 # Each track is levelled and dropped to the 16 kHz mono Whisper wants.
+# On a re-run the raw WAVs are long gone and the AAC copies stand in for them.
+if [[ ! -f mic.wav && ! -f mic.m4a && ! -f system.wav && ! -f system.m4a && -f meeting.m4a ]]; then
+  ln meeting.m4a mic.m4a 2>/dev/null || cp meeting.m4a mic.m4a
+fi
+
 TRACKS=()
 for track in mic system; do
-  [[ -f "$track.wav" ]] || continue
-  DB=$(ffmpeg -i "$track.wav" -af volumedetect -f null - 2>&1 | awk -F': ' '/mean_volume/ {print $2+0}')
+  SRC=""
+  [[ -f "$track.wav" ]] && SRC="$track.wav"
+  [[ -z "$SRC" && -f "$track.m4a" ]] && SRC="$track.m4a"
+  [[ -n "$SRC" ]] || continue
+  DB=$(ffmpeg -i "$SRC" -af volumedetect -f null - 2>&1 | awk -F': ' '/mean_volume/ {print $2+0}')
   if [[ -z "$DB" ]] || (( DB < QUIET_DB )); then
-    log "$track.wav is silent (${DB:-no} dB) — skipping it"
+    log "$SRC is silent (${DB:-no} dB) — skipping it"
     continue
   fi
-  log "preparing $track.wav (${DB} dB average)"
-  ffmpeg -y -i "$track.wav" -af "highpass=f=80,dynaudnorm=f=250:g=15" \
+  log "preparing $SRC (${DB} dB average)"
+  ffmpeg -y -i "$SRC" -af "highpass=f=80,dynaudnorm=f=250:g=15" \
     -ac 1 -ar 16000 -c:a pcm_s16le "$track-16k.wav" >>notula.log 2>&1
   TRACKS+=$track
 done
@@ -169,6 +177,34 @@ if [[ -n "$TITLE" ]]; then
       log "named it after the meeting: $(basename "$FOLDER")"
     fi
   fi
+fi
+
+# ------------------------------------------------------ 5. keep it small --
+# A 48 kHz float WAV costs about 700 MB an hour per track, and once the words are
+# out of it nothing needs that. The audio stays as AAC, which is a twentieth of
+# the size and still perfectly clear for speech. NOTULA_KEEP_WAV=1 keeps the WAVs.
+if [[ -z "${NOTULA_KEEP_WAV:-}" ]]; then
+  BEFORE=$(du -sk . | cut -f1)
+  if (( ${#TRACKS} == 2 )); then
+    for track in $TRACKS; do
+      [[ -f "$track.wav" ]] || continue
+      ffmpeg -y -i "$track.wav" -c:a aac -b:a 64k -ac 1 "$track.m4a" >>notula.log 2>&1 && rm -f "$track.wav"
+    done
+    if [[ -f meeting.wav ]]; then
+      ffmpeg -y -i meeting.wav -c:a aac -b:a 64k -ac 1 meeting.m4a >>notula.log 2>&1 && rm -f meeting.wav
+    fi
+  else
+    ONLY="${TRACKS[1]}"
+    if [[ -f "$ONLY.wav" ]]; then
+      ffmpeg -y -i "$ONLY.wav" -c:a aac -b:a 64k -ac 1 meeting.m4a >>notula.log 2>&1 && rm -f "$ONLY.wav"
+    elif [[ -f meeting.wav && ! -f meeting.m4a ]]; then
+      ffmpeg -y -i meeting.wav -c:a aac -b:a 64k -ac 1 meeting.m4a >>notula.log 2>&1
+    fi
+    rm -f meeting.wav
+  fi
+  rm -f -- *-16k.wav
+  AFTER=$(du -sk . | cut -f1)
+  log "audio compressed: $(( BEFORE / 1024 )) MB → $(( AFTER / 1024 )) MB"
 fi
 
 log "done — $FOLDER/summary.html"
