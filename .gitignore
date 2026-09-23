@@ -4,3 +4,5 @@ models/
 *.wav
 *.bin
 .DS_Store
+.env
+.env.*
