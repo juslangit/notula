@@ -6,3 +6,6 @@ models/
 .DS_Store
 .env
 .env.*
+
+# Project record: built locally, never committed (it holds session logs)
+docs/index.html
